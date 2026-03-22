@@ -3,7 +3,7 @@ const char index_html[] PROGMEM = R"rawliteral(
 <!DOCTYPE HTML>
 <html>
 <head>
-<title>Servo Driver</title>
+<title>Servo Buddy</title>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <link rel="icon" href="data:,">
 <style>
@@ -151,7 +151,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
 <div class="hdr">
   <div class="hdr-title">
     <div class="hdr-dot" id="connDot"></div>
-    <span class="hdr-name">SERVO DRIVER</span>
+    <span class="hdr-name">SERVO BUDDY</span>
     <span class="hdr-sub">ESP32</span>
   </div>
   <button class="scan-btn" id="scanBtn" onclick="do_scan()">Scan</button>

@@ -1,5 +1,6 @@
 #pragma once
 #include <WiFi.h>
+#include <ESPmDNS.h>
 #include <WebServer.h>
 #include "web_page.h"
 
@@ -470,6 +471,7 @@ void start_ap(){
 
 void start_sta(){
   wifi_mode = 3;
+  WiFi.setHostname("servo-buddy");
   Serial.print("Connecting to ");
   Serial.println(sta_ssid);
   WiFi.begin(sta_ssid, sta_pwd);
@@ -486,6 +488,7 @@ void start_sta(){
   if (WiFi.status() == WL_CONNECTED) {
     wifi_mode = 2;
     get_ip();
+    MDNS.begin("servo-buddy");
     Serial.print("Connected to ");
     Serial.println(sta_ssid);
     Serial.print("IP address: ");
