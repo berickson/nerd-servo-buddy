@@ -66,3 +66,6 @@
 - LittleFS for HTML if PROGMEM gets too large
 - Preset positions / simple motion sequences for testing
 - Visual warnings for over-temperature / over-load
+- Mouse Test: Touch/mobile support (pinch for scroll, drag for X/Y)
+- Mouse Test: Save axis assignments to NVS
+- Mouse Test: Gamepad input support

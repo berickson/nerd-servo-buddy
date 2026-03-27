@@ -144,6 +144,35 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
 .help-btn:hover,.help-btn:focus{color:var(--accent);border-color:rgba(108,140,255,0.4)}
 .help-tip{display:none;position:absolute;bottom:calc(100% + 6px);right:-4px;background:#1a1c24;border:1px solid rgba(255,255,255,0.15);border-radius:6px;padding:6px 8px;font-size:11px;color:var(--mid);font-weight:400;width:220px;z-index:10;text-transform:none;letter-spacing:0;line-height:1.3;box-shadow:0 2px 8px rgba(0,0,0,0.4)}
 .help-btn:hover .help-tip,.help-btn:focus .help-tip{display:block}
+
+/* Mouse Test Mode */
+.mouse-test{display:none;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px 18px;margin-top:8px}
+.mouse-test.open{display:block}
+.mt-title{font-size:14px;font-weight:700;color:var(--text);margin-bottom:10px;display:flex;align-items:center;justify-content:space-between}
+.mt-close{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:6px;padding:5px 12px;font-size:12px;font-weight:600;color:var(--mid)}
+.mt-axes{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
+.mt-axis{display:flex;align-items:center;gap:8px}
+.mt-axis-lbl{font-size:12px;font-weight:700;color:var(--label);text-transform:uppercase;letter-spacing:0.06em;width:50px;flex-shrink:0}
+.mt-axis select{background:rgba(0,0,0,0.3);border:1.5px solid rgba(255,255,255,0.1);border-radius:5px;color:var(--text);font-size:13px;font-family:var(--mono);padding:4px 6px;outline:none;min-width:120px}
+.mt-axis select:focus{border-color:var(--accent)}
+.mt-axis select option{background:#1a1c24;color:var(--text)}
+.mt-flip{display:flex;align-items:center;gap:4px}
+.mt-flip label{font-size:11px;color:var(--dim);cursor:pointer;user-select:none}
+.mt-flip input{accent-color:var(--accent);width:14px;height:14px}
+.mt-pos-val{font-family:var(--mono);font-size:13px;color:var(--mid);font-weight:600;width:42px;text-align:right}
+.mt-gain{display:flex;align-items:center;gap:4px}
+.mt-gain label{font-size:11px;color:var(--dim)}
+.mt-gain select{background:rgba(0,0,0,0.3);border:1.5px solid rgba(255,255,255,0.1);border-radius:5px;color:var(--text);font-size:12px;font-family:var(--mono);padding:2px 4px;outline:none}
+.mt-gain select option{background:#1a1c24;color:var(--text)}
+.mt-area{display:flex;gap:12px;align-items:flex-start}
+.trackpad{width:300px;height:300px;background:rgba(0,0,0,0.35);border:1.5px solid rgba(255,255,255,0.12);border-radius:8px;position:relative;cursor:crosshair;touch-action:none;flex-shrink:0}
+.trackpad-line-h,.trackpad-line-v{position:absolute;pointer-events:none}
+.trackpad-line-h{left:0;right:0;height:1px;background:rgba(108,140,255,0.5)}
+.trackpad-line-v{top:0;bottom:0;width:1px;background:rgba(108,140,255,0.5)}
+.trackpad-dot{position:absolute;width:10px;height:10px;border-radius:50%;background:var(--accent);box-shadow:0 0 8px rgba(108,140,255,0.5);pointer-events:none;transform:translate(-50%,-50%)}
+.scroll-track{width:20px;height:300px;background:rgba(0,0,0,0.35);border:1.5px solid rgba(255,255,255,0.12);border-radius:8px;position:relative;flex-shrink:0}
+.scroll-thumb{position:absolute;left:2px;right:2px;height:16px;background:var(--accent);border-radius:4px;pointer-events:none;transition:top 0.05s}
+.mt-hint{font-size:11px;color:var(--faint);margin-top:8px;line-height:1.4}
 </style>
 </head>
 <body>
@@ -155,7 +184,49 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
     <span class="hdr-name">SERVO BUDDY</span>
     <span class="hdr-sub">ESP32</span>
   </div>
-  <button class="scan-btn" id="scanBtn" onclick="do_scan()">Scan</button>
+  <div style="display:flex;gap:6px">
+    <button class="scan-btn" id="mtBtn" onclick="toggle_mouse_test()">Mouse Test</button>
+    <button class="scan-btn" id="scanBtn" onclick="do_scan()">Scan</button>
+  </div>
+</div>
+
+<div class="mouse-test" id="mouseTest">
+  <div class="mt-title">
+    <span>Mouse Test Mode</span>
+    <button class="mt-close" onclick="toggle_mouse_test()">Close</button>
+  </div>
+  <div class="mt-axes">
+    <div class="mt-axis">
+      <span class="mt-axis-lbl">X-Axis</span>
+      <select id="mt-sel-x"><option value="">None</option></select>
+      <div class="mt-flip"><input type="checkbox" id="mt-flip-x"><label for="mt-flip-x">Flip</label></div>
+      <span class="mt-pos-val" id="mt-val-x">&mdash;</span>
+    </div>
+    <div class="mt-axis">
+      <span class="mt-axis-lbl">Y-Axis</span>
+      <select id="mt-sel-y"><option value="">None</option></select>
+      <div class="mt-flip"><input type="checkbox" id="mt-flip-y"><label for="mt-flip-y">Flip</label></div>
+      <span class="mt-pos-val" id="mt-val-y">&mdash;</span>
+    </div>
+    <div class="mt-axis">
+      <span class="mt-axis-lbl">Scroll</span>
+      <select id="mt-sel-s"><option value="">None</option></select>
+      <div class="mt-flip"><input type="checkbox" id="mt-flip-s"><label for="mt-flip-s">Flip</label></div>
+      <div class="mt-gain"><label>Gain</label><select id="mt-gain-s"><option value="1">1x</option><option value="5" selected>5x</option><option value="10">10x</option><option value="25">25x</option><option value="50">50x</option></select></div>
+      <span class="mt-pos-val" id="mt-val-s">&mdash;</span>
+    </div>
+  </div>
+  <div class="mt-area">
+    <div class="trackpad" id="trackpad">
+      <div class="trackpad-line-h" id="tp-lh" style="top:50%"></div>
+      <div class="trackpad-line-v" id="tp-lv" style="left:50%"></div>
+      <div class="trackpad-dot" id="tp-dot" style="left:50%;top:50%"></div>
+    </div>
+    <div class="scroll-track" id="scrollTrack">
+      <div class="scroll-thumb" id="scrollThumb" style="top:calc(50% - 8px)"></div>
+    </div>
+  </div>
+  <div class="mt-hint">Move mouse in the trackpad to control X/Y servos. Scroll wheel controls the scroll axis. Assign servos above.</div>
 </div>
 
 <div class="cards" id="cards">
@@ -200,6 +271,7 @@ function poll_scan_done(){
     api('/api/scan',function(d){
       if(d.servos){servos=d.servos.map(function(s){var o=servo_by_id(s.id);return make_servo(s,o)});render_all();start_polling();load_torque_limits();load_angle_limits()}
       scanning=false;document.getElementById('scanBtn').textContent='Scan';set_conn(true);
+      if(mt_open)populate_axis_dropdowns();
     });
   });
 }
@@ -774,6 +846,128 @@ function save_id(id){
     } else {flash_status('cfg-id-ok-'+id,'Failed')}
   });
 }
+
+// === Mouse Test Mode ===
+var mt_open=false,mt_scroll_pos=0.5;
+var mt_throttle={x:null,y:null,s:null};
+
+function toggle_mouse_test(){
+  mt_open=!mt_open;
+  var panel=document.getElementById('mouseTest');
+  panel.classList.toggle('open',mt_open);
+  document.getElementById('mtBtn').textContent=mt_open?'Close Test':'Mouse Test';
+  if(mt_open)populate_axis_dropdowns();
+}
+
+function populate_axis_dropdowns(){
+  var ids=['mt-sel-x','mt-sel-y','mt-sel-s'];
+  for(var d=0;d<ids.length;d++){
+    var sel=document.getElementById(ids[d]);if(!sel)continue;
+    var cur=sel.value;
+    sel.innerHTML='<option value="">None</option>';
+    for(var i=0;i<servos.length;i++){
+      var s=servos[i];
+      var lbl='#'+s.id+(s.name?' '+s.name:'');
+      sel.innerHTML+='<option value="'+s.id+'">'+lbl+'</option>';
+    }
+    sel.value=cur;
+  }
+}
+
+function mt_get_axis(axis){
+  var sel=document.getElementById('mt-sel-'+axis);
+  if(!sel||!sel.value)return null;
+  var s=servo_by_id(parseInt(sel.value));
+  if(!s)return null;
+  var flip=document.getElementById('mt-flip-'+axis);
+  return{servo:s,flipped:flip&&flip.checked};
+}
+
+function mt_map_position(fraction,servo,flipped){
+  var lo=servo.limMin>=0?servo.limMin:0;
+  var hi=servo.limMax>=0?servo.limMax:servo.range;
+  if(flipped)fraction=1.0-fraction;
+  return Math.round(lo+fraction*(hi-lo));
+}
+
+function mt_send_axis(axis,pos,servo){
+  if(mt_throttle[axis])return;
+  mt_throttle[axis]=setTimeout(function(){mt_throttle[axis]=null},50);
+  servo.setpoint=pos;
+  send_pos(servo.id,pos);
+  sync_ui(servo.id);
+}
+
+(function(){
+  var tp=document.getElementById('trackpad');
+  var scrollTrack=document.getElementById('scrollTrack');
+
+  tp.addEventListener('mousemove',function(e){
+    var rect=tp.getBoundingClientRect();
+    var fx=Math.max(0,Math.min(1,(e.clientX-rect.left)/rect.width));
+    var fy=Math.max(0,Math.min(1,(e.clientY-rect.top)/rect.height));
+
+    // Update crosshair visuals
+    document.getElementById('tp-lh').style.top=(fy*100)+'%';
+    document.getElementById('tp-lv').style.left=(fx*100)+'%';
+    document.getElementById('tp-dot').style.left=(fx*100)+'%';
+    document.getElementById('tp-dot').style.top=(fy*100)+'%';
+
+    // X axis
+    var ax=mt_get_axis('x');
+    if(ax){
+      var px=mt_map_position(fx,ax.servo,ax.flipped);
+      mt_send_axis('x',px,ax.servo);
+      document.getElementById('mt-val-x').textContent=px;
+    }
+    // Y axis
+    var ay=mt_get_axis('y');
+    if(ay){
+      var py=mt_map_position(fy,ay.servo,ay.flipped);
+      mt_send_axis('y',py,ay.servo);
+      document.getElementById('mt-val-y').textContent=py;
+    }
+  });
+
+  tp.addEventListener('wheel',function(e){
+    e.preventDefault();
+    var as=mt_get_axis('s');
+    if(!as)return;
+    var step=(e.deltaY>0?1:-1)*(as.flipped?-1:1);
+    var lo=as.servo.limMin>=0?as.servo.limMin:0;
+    var hi=as.servo.limMax>=0?as.servo.limMax:as.servo.range;
+    var gain=parseInt(document.getElementById('mt-gain-s').value)||5;
+    var tick=gain*(hi-lo)/100;
+    if(tick<1)tick=1;
+    // Init scroll position from current servo setpoint on first scroll
+    if(mt_scroll_pos<0){mt_scroll_pos=(as.servo.setpoint-lo)/(hi-lo)||0.5}
+    mt_scroll_pos=Math.max(0,Math.min(1,mt_scroll_pos+step*tick/(hi-lo)));
+    var ps=Math.round(lo+mt_scroll_pos*(hi-lo));
+    mt_send_axis('s',ps,as.servo);
+    document.getElementById('mt-val-s').textContent=ps;
+    // Update scroll thumb visual
+    var th=document.getElementById('scrollThumb');
+    th.style.top='calc('+((mt_scroll_pos)*100)+'% - 8px)';
+  },{passive:false});
+
+  // Reset scroll position when scroll servo selection changes
+  document.getElementById('mt-sel-s').addEventListener('change',function(){
+    var as=mt_get_axis('s');
+    if(as){
+      var lo=as.servo.limMin>=0?as.servo.limMin:0;
+      var hi=as.servo.limMax>=0?as.servo.limMax:as.servo.range;
+      mt_scroll_pos=(as.servo.setpoint-lo)/(hi-lo);
+      if(isNaN(mt_scroll_pos))mt_scroll_pos=0.5;
+      document.getElementById('mt-val-s').textContent=as.servo.setpoint;
+      var th=document.getElementById('scrollThumb');
+      th.style.top='calc('+(mt_scroll_pos*100)+'% - 8px)';
+    } else {
+      mt_scroll_pos=0.5;
+      document.getElementById('mt-val-s').textContent='\u2014';
+      document.getElementById('scrollThumb').style.top='calc(50% - 8px)';
+    }
+  });
+})();
 
 initial_load();
 </script>
