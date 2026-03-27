@@ -165,7 +165,10 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
 .mt-gain select{background:rgba(0,0,0,0.3);border:1.5px solid rgba(255,255,255,0.1);border-radius:5px;color:var(--text);font-size:12px;font-family:var(--mono);padding:2px 4px;outline:none}
 .mt-gain select option{background:#1a1c24;color:var(--text)}
 .mt-area{display:flex;gap:12px;align-items:flex-start}
-.trackpad{width:300px;height:300px;background:rgba(0,0,0,0.35);border:1.5px solid rgba(255,255,255,0.12);border-radius:8px;position:relative;cursor:crosshair;touch-action:none;flex-shrink:0}
+.trackpad{width:300px;height:300px;background:rgba(0,0,0,0.35);border:1.5px solid rgba(255,255,255,0.12);border-radius:8px;position:relative;cursor:crosshair;touch-action:none;flex-shrink:0;transition:border-color .15s,box-shadow .15s}
+.trackpad.captured{border-color:var(--accent);box-shadow:0 0 12px rgba(108,140,255,0.3);cursor:none}
+.trackpad-label{position:absolute;bottom:8px;left:0;right:0;text-align:center;font-size:11px;color:var(--faint);pointer-events:none;transition:opacity .15s}
+.trackpad.captured .trackpad-label{opacity:0}
 .trackpad-line-h,.trackpad-line-v{position:absolute;pointer-events:none}
 .trackpad-line-h{left:0;right:0;height:1px;background:rgba(108,140,255,0.5)}
 .trackpad-line-v{top:0;bottom:0;width:1px;background:rgba(108,140,255,0.5)}
@@ -221,12 +224,13 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
       <div class="trackpad-line-h" id="tp-lh" style="top:50%"></div>
       <div class="trackpad-line-v" id="tp-lv" style="left:50%"></div>
       <div class="trackpad-dot" id="tp-dot" style="left:50%;top:50%"></div>
+      <div class="trackpad-label" id="tp-label">Click to capture</div>
     </div>
     <div class="scroll-track" id="scrollTrack">
       <div class="scroll-thumb" id="scrollThumb" style="top:calc(50% - 8px)"></div>
     </div>
   </div>
-  <div class="mt-hint">Move mouse in the trackpad to control X/Y servos. Scroll wheel controls the scroll axis. Assign servos above.</div>
+  <div class="mt-hint">Click the trackpad to capture the mouse, then move to control X/Y servos. Click again or press Escape to release. Scroll wheel controls the scroll axis.</div>
 </div>
 
 <div class="cards" id="cards">
@@ -857,6 +861,7 @@ function toggle_mouse_test(){
   panel.classList.toggle('open',mt_open);
   document.getElementById('mtBtn').textContent=mt_open?'Close Test':'Mouse Test';
   if(mt_open)populate_axis_dropdowns();
+  if(!mt_open&&document.pointerLockElement)document.exitPointerLock();
 }
 
 function populate_axis_dropdowns(){
@@ -901,35 +906,57 @@ function mt_send_axis(axis,pos,servo){
 (function(){
   var tp=document.getElementById('trackpad');
   var scrollTrack=document.getElementById('scrollTrack');
+  var mt_captured=false;
+  var mt_fx=0.5, mt_fy=0.5;  // internal position as fractions 0..1
+
+  // Click to capture / release pointer lock
+  tp.addEventListener('click',function(){
+    if(!mt_captured){
+      tp.requestPointerLock();
+    } else {
+      document.exitPointerLock();
+    }
+  });
+
+  document.addEventListener('pointerlockchange',function(){
+    mt_captured=(document.pointerLockElement===tp);
+    tp.classList.toggle('captured',mt_captured);
+    var lbl=document.getElementById('tp-label');
+    lbl.textContent=mt_captured?'Click to release':'Click to capture';
+  });
 
   tp.addEventListener('mousemove',function(e){
-    var rect=tp.getBoundingClientRect();
-    var fx=Math.max(0,Math.min(1,(e.clientX-rect.left)/rect.width));
-    var fy=Math.max(0,Math.min(1,(e.clientY-rect.top)/rect.height));
+    if(!mt_captured)return;
+    // Use relative movement, scaled by trackpad size
+    var rect_w=tp.offsetWidth||300;
+    var rect_h=tp.offsetHeight||300;
+    mt_fx=Math.max(0,Math.min(1,mt_fx+e.movementX/rect_w));
+    mt_fy=Math.max(0,Math.min(1,mt_fy+e.movementY/rect_h));
 
     // Update crosshair visuals
-    document.getElementById('tp-lh').style.top=(fy*100)+'%';
-    document.getElementById('tp-lv').style.left=(fx*100)+'%';
-    document.getElementById('tp-dot').style.left=(fx*100)+'%';
-    document.getElementById('tp-dot').style.top=(fy*100)+'%';
+    document.getElementById('tp-lh').style.top=(mt_fy*100)+'%';
+    document.getElementById('tp-lv').style.left=(mt_fx*100)+'%';
+    document.getElementById('tp-dot').style.left=(mt_fx*100)+'%';
+    document.getElementById('tp-dot').style.top=(mt_fy*100)+'%';
 
     // X axis
     var ax=mt_get_axis('x');
     if(ax){
-      var px=mt_map_position(fx,ax.servo,ax.flipped);
+      var px=mt_map_position(mt_fx,ax.servo,ax.flipped);
       mt_send_axis('x',px,ax.servo);
       document.getElementById('mt-val-x').textContent=px;
     }
     // Y axis
     var ay=mt_get_axis('y');
     if(ay){
-      var py=mt_map_position(fy,ay.servo,ay.flipped);
+      var py=mt_map_position(mt_fy,ay.servo,ay.flipped);
       mt_send_axis('y',py,ay.servo);
       document.getElementById('mt-val-y').textContent=py;
     }
   });
 
-  tp.addEventListener('wheel',function(e){
+  function handle_scroll_wheel(e){
+    if(!mt_captured)return;
     e.preventDefault();
     var as=mt_get_axis('s');
     if(!as)return;
@@ -948,7 +975,11 @@ function mt_send_axis(axis,pos,servo){
     // Update scroll thumb visual
     var th=document.getElementById('scrollThumb');
     th.style.top='calc('+((mt_scroll_pos)*100)+'% - 8px)';
-  },{passive:false});
+  }
+
+  // Listen on both trackpad (uncaptured) and document (captured via pointer lock)
+  tp.addEventListener('wheel',handle_scroll_wheel,{passive:false});
+  document.addEventListener('wheel',handle_scroll_wheel,{passive:false});
 
   // Reset scroll position when scroll servo selection changes
   document.getElementById('mt-sel-s').addEventListener('change',function(){
